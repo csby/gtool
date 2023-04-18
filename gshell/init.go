@@ -11,7 +11,7 @@ import (
 
 const (
 	moduleName    = "gshell"
-	moduleVersion = "1.0.1.0"
+	moduleVersion = "1.0.1.1"
 )
 
 var (

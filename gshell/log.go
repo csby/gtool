@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -14,11 +15,14 @@ var stdWriter io.Writer = os.Stdout
 type LogWriter struct {
 	sync.Mutex
 
-	folder string
-	year   int
-	month  time.Month
-	day    int
-	file   *os.File
+	folder  string
+	year    int
+	month   time.Month
+	day     int
+	file    *os.File
+	level   string
+	curSize int
+	maxSize int
 }
 
 func (s *LogWriter) Write(p []byte) (n int, err error) {
@@ -26,11 +30,38 @@ func (s *LogWriter) Write(p []byte) (n int, err error) {
 		return 0, nil
 	}
 
+	if len(s.level) > 0 {
+		msg := string(p)
+		index := strings.Index(msg, " ")
+		if index < 1 {
+			return 0, nil
+		}
+		level := strings.ToUpper(msg[0:index])
+		if !strings.Contains(s.level, level) {
+			return 0, nil
+		}
+	}
+
 	writer := s.getLogger()
 	if writer != nil {
 		s.Lock()
 		defer s.Unlock()
-		return writer.Write(p)
+
+		n, err = writer.Write(p)
+		if err == nil {
+			s.curSize += n
+		}
+
+		if s.maxSize > 0 {
+			if s.curSize > s.maxSize {
+				s.curSize = 0
+				s.year = 0
+				s.month = 0
+				s.day = 0
+			}
+		}
+
+		return
 	}
 
 	return 0, nil
@@ -89,8 +120,7 @@ func (s *LogWriter) getLogger() io.Writer {
 			}
 
 			os.MkdirAll(s.folder, 0777)
-			fileName := fmt.Sprintf("%s.log", now.Format("2006-01-02"))
-			filePath := filepath.Join(s.folder, fileName)
+			filePath := s.getValidFilePath(s.folder, now)
 			file, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 			if err != nil {
 				return nil
@@ -104,4 +134,24 @@ func (s *LogWriter) getLogger() io.Writer {
 	}
 
 	return stdWriter
+}
+
+func (s *LogWriter) getValidFilePath(folder string, t time.Time) string {
+	fileName := fmt.Sprintf("%s.log", t.Format("2006-01-02"))
+	filePath := filepath.Join(folder, fileName)
+
+	index := 1
+	for s.isExist(filePath) {
+		fileName = fmt.Sprintf("%s_%d.log", t.Format("2006-01-02"), index)
+		filePath = filepath.Join(folder, fileName)
+		index++
+	}
+
+	return filePath
+}
+
+func (s *LogWriter) isExist(name string) bool {
+	_, err := os.Stat(name)
+
+	return err == nil || os.IsExist(err)
 }

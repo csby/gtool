@@ -5,6 +5,7 @@ import (
 	"github.com/kardianos/service"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func main() {
@@ -35,6 +36,8 @@ func main() {
 		log.Info(fmt.Sprintf("prepare %d exec: ", i+1), p.Exec)
 		log.Info(fmt.Sprintf("prepare %d args: ", i+1), p.Args)
 	}
+	log.Info("log level: ", info.Log.Level)
+	log.Info("log max size: ", info.Log.MaxSize)
 
 	if service.Interactive() == false {
 		if len(info.Name) < 1 {
@@ -55,5 +58,7 @@ func main() {
 		server.service = svc
 	}
 
+	log.maxSize = info.Log.MaxSize
+	log.level = strings.ToUpper(info.Log.Level)
 	server.Run()
 }

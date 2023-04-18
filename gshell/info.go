@@ -12,9 +12,10 @@ import (
 type Info struct {
 	sync.RWMutex
 
-	Name string `json:"name" note:"项目名称"`
-	Exec string `json:"exec" note:"可执行程序"`
-	Args string `json:"args" note:"程序启动参数"`
+	Name string  `json:"name" note:"项目名称"`
+	Exec string  `json:"exec" note:"可执行程序"`
+	Args string  `json:"args" note:"程序启动参数"`
+	Log  InfoLog `json:"log" note:"日志配置"`
 
 	Prepares []*InfoPrepare `json:"prepares" note:"预执行程序(主程序运行前执行)"`
 }

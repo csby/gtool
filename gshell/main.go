@@ -59,6 +59,15 @@ func main() {
 	}
 
 	log.maxSize = info.Log.MaxSize
-	log.level = strings.ToUpper(info.Log.Level)
+	log.levels = make([]string, 0)
+	levels := strings.Split(strings.ToUpper(info.Log.Level), "|")
+	c = len(levels)
+	for i := 0; i < c; i++ {
+		level := strings.TrimSpace(levels[i])
+		if len(level) > 0 {
+			log.levels = append(log.levels, level)
+		}
+	}
+
 	server.Run()
 }

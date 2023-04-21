@@ -20,7 +20,7 @@ type LogWriter struct {
 	month   time.Month
 	day     int
 	file    *os.File
-	level   string
+	levels  []string
 	curSize int
 	maxSize int
 }
@@ -30,14 +30,9 @@ func (s *LogWriter) Write(p []byte) (n int, err error) {
 		return 0, nil
 	}
 
-	if len(s.level) > 0 {
-		msg := string(p)
-		index := strings.Index(msg, " ")
-		if index < 1 {
-			return 0, nil
-		}
-		level := strings.ToUpper(msg[0:index])
-		if !strings.Contains(s.level, level) {
+	if len(s.levels) > 0 {
+		msg := strings.ToUpper(string(p))
+		if !s.isLevelMatch(msg) {
 			return 0, nil
 		}
 	}
@@ -154,4 +149,20 @@ func (s *LogWriter) isExist(name string) bool {
 	_, err := os.Stat(name)
 
 	return err == nil || os.IsExist(err)
+}
+
+func (s *LogWriter) isLevelMatch(msg string) bool {
+	c := len(s.levels)
+	if c < 1 {
+		return true
+	}
+
+	for i := 0; i < c; i++ {
+		level := s.levels[i]
+		if strings.Index(msg, level) > -1 {
+			return true
+		}
+	}
+
+	return false
 }
